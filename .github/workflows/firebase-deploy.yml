@@ -1,0 +1,38 @@
+name: Deploy to Firebase Hosting
+
+on:
+  push:
+    branches:
+      - main  # change if using different branch
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Setup Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - name: Install Firebase CLI
+        run: npm install -g firebase-tools
+
+      - name: Setup Flutter
+        run: |
+          git clone https://github.com/flutter/flutter.git --depth 1
+          export PATH="$PATH:`pwd`/flutter/bin"
+          flutter pub get
+          flutter build web
+
+      - name: Write service account credentials to file
+        run: |
+          echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT }}' > $HOME/firebase-key.json
+
+      - name: Deploy to Firebase
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: $HOME/firebase-key.json
+        run: firebase deploy --only hosting
