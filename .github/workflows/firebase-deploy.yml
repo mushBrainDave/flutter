@@ -21,7 +21,7 @@ jobs:
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.29.2'  # set to your local Flutter version
+          flutter-version: '3.29.2'
 
       - name: Install dependencies
         run: flutter pub get
@@ -29,16 +29,13 @@ jobs:
       - name: Build Flutter Web
         run: flutter build web
 
-      - name: Write Firebase Service Account JSON
-        run: |
-          echo "$FIREBASE_SERVICE_ACCOUNT" > $HOME/firebase-key.json
-        env:
-          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
-
-      - name: Install Firebase CLI
-        run: npm install -g firebase-tools
-
+      - name: Create service account key file
+        run: echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT }}' > ${{ github.workspace }}/service-account-key.json
+      
       - name: Deploy to Firebase
-        env:
-          GOOGLE_APPLICATION_CREDENTIALS: $HOME/firebase-key.json
-        run: firebase deploy --only hosting
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: '${{ secrets.GITHUB_TOKEN }}'
+          firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT }}'
+          channelId: live
+          projectId: prank-iot
