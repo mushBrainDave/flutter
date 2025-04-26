@@ -107,7 +107,7 @@ class _MqttButtonPageState extends State<MqttButtonPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('ESP32 Ping Button')),
+      appBar: AppBar(title: const Text('ESP32 Sound Board')),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -116,7 +116,7 @@ class _MqttButtonPageState extends State<MqttButtonPage> {
             const SizedBox(height: 20),
             ElevatedButton(
               onPressed: status.startsWith('Connected') || status.startsWith('ESP32') ? sendPing : null,
-              child: const Text('Ping ESP32'),
+              child: const Text("That's Flavor Town"),
             ),
           ],
         ),
