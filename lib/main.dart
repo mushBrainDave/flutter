@@ -128,6 +128,10 @@ class _MqttButtonPageState extends State<MqttButtonPage> {
                   onPressed: enabled ? () => sendSound('scooby') : null,
                   child: const Text('Scooby'),
                 ),
+                ElevatedButton(
+                  onPressed: enabled ? () => sendSound('alrighty then') : null,
+                  child: const Text('Alrighty Then'),
+                ),
               ],
             ),
           ],
