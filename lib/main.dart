@@ -10,7 +10,6 @@ void main() {
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
-
   @override
   Widget build(BuildContext context) {
     return const MaterialApp(
@@ -21,7 +20,6 @@ class MyApp extends StatelessWidget {
 
 class MqttButtonPage extends StatefulWidget {
   const MqttButtonPage({super.key});
-
   @override
   State<MqttButtonPage> createState() => _MqttButtonPageState();
 }
@@ -29,8 +27,8 @@ class MqttButtonPage extends StatefulWidget {
 class _MqttButtonPageState extends State<MqttButtonPage> {
   late MqttClient client;
   String status = 'Disconnected';
-  String topic = 'esp32';
-  String responseTopic = 'esp32';
+  final String topic = 'esp32';
+  final String responseTopic = 'esp32';
 
   @override
   void initState() {
@@ -43,69 +41,60 @@ class _MqttButtonPageState extends State<MqttButtonPage> {
     String clientId = 'flutter_client_${DateTime.now().millisecondsSinceEpoch}';
 
     if (kIsWeb) {
-      client = MqttBrowserClient('wss://$host/mqtt', clientId);
-      //client = MqttServerClient.withPort(host, clientId, 80); // WebSocket port
-      client.port = 443;
-      client.websocketProtocols = ['mqtt'];
+      client = MqttBrowserClient('wss://$host/mqtt', clientId)
+        ..port = 443
+        ..websocketProtocols = ['mqtt'];
     } else {
-      client = MqttServerClient.withPort(host, clientId, 1883); // Standard MQTT port
+      client = MqttServerClient.withPort(host, clientId, 1883);
     }
-    client.logging(on: true);
-    client.keepAlivePeriod = 20;
-    client.onDisconnected = onDisconnected;
 
-  client.connectionMessage = MqttConnectMessage()
-      .withClientIdentifier('flutter_client')
-      .startClean()
-      .withWillQos(MqttQos.atMostOnce);
+    client
+      ..logging(on: true)
+      ..keepAlivePeriod = 20
+      ..onDisconnected = onDisconnected
+      ..connectionMessage = MqttConnectMessage()
+          .withClientIdentifier(clientId)
+          .startClean()
+          .withWillQos(MqttQos.atMostOnce);
 
     try {
       await client.connect();
     } catch (e) {
-      setState(() {
-        status = 'Connection failed: $e';
-      });
+      setState(() => status = 'Connection failed: $e');
       client.disconnect();
       return;
     }
 
     if (client.connectionStatus!.state == MqttConnectionState.connected) {
-      setState(() {
-        status = 'Connected';
-      });
+      setState(() => status = 'Connected');
       client.subscribe(responseTopic, MqttQos.atMostOnce);
-      client.updates!.listen((List<MqttReceivedMessage<MqttMessage>> c) {
-        final payload = (c[0].payload as MqttPublishMessage).payload.message;
+      client.updates!.listen((msgs) {
+        final payload =
+            (msgs[0].payload as MqttPublishMessage).payload.message;
         final message = String.fromCharCodes(payload);
-        setState(() {
-          status = 'ESP32 Response: $message';
-        });
+        setState(() => status = 'ESP32 Response: $message');
       });
     } else {
-      setState(() {
-        status = 'Connection failed: ${client.connectionStatus}';
-      });
+      setState(() => status = 'Connection failed: ${client.connectionStatus}');
       client.disconnect();
     }
   }
 
-  void sendPing() {
-    final builder = MqttClientPayloadBuilder();
-    builder.addString('ping');
+  void sendSound(String sound) {
+    final builder = MqttClientPayloadBuilder()..addString(sound);
     client.publishMessage(topic, MqttQos.atMostOnce, builder.payload!);
-    setState(() {
-      status = 'Ping sent...';
-    });
+    setState(() => status = 'Sent "$sound"');
   }
 
   void onDisconnected() {
-    setState(() {
-      status = 'Disconnected';
-    });
+    setState(() => status = 'Disconnected');
   }
 
   @override
   Widget build(BuildContext context) {
+    final bool enabled =
+        status.startsWith('Connected') || status.startsWith('ESP32');
+
     return Scaffold(
       appBar: AppBar(title: const Text('ESP32 Sound Board')),
       body: Center(
@@ -114,9 +103,32 @@ class _MqttButtonPageState extends State<MqttButtonPage> {
           children: [
             Text(status),
             const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: status.startsWith('Connected') || status.startsWith('ESP32') ? sendPing : null,
-              child: const Text("That's Flavor Town"),
+            Wrap(
+              spacing: 12,
+              runSpacing: 12,
+              alignment: WrapAlignment.center,
+              children: [
+                ElevatedButton(
+                  onPressed: enabled ? () => sendSound('flavor') : null,
+                  child: const Text("That's Flavor Town"),
+                ),
+                ElevatedButton(
+                  onPressed: enabled ? () => sendSound('woo') : null,
+                  child: const Text('Woo'),
+                ),
+                ElevatedButton(
+                  onPressed: enabled ? () => sendSound('bonk') : null,
+                  child: const Text('Bonk'),
+                ),
+                ElevatedButton(
+                  onPressed: enabled ? () => sendSound('ugh') : null,
+                  child: const Text('Ugh'),
+                ),
+                ElevatedButton(
+                  onPressed: enabled ? () => sendSound('scooby') : null,
+                  child: const Text('Scooby'),
+                ),
+              ],
             ),
           ],
         ),
